@@ -9,20 +9,25 @@ description: Learn how to use React, Svelte, etc.
 
 ## Hydrate Interactive Components
 
-Astro renders every component on the server **at build time**, unless [client:only](#mycomponent-clientonly-) is used. To hydrate components on the client **at runtime**, you may use any of the following `client:*` directives. A directive is a component attribute (always with a `:`) which tells Astro how your component should be rendered.
+A framework component can be hydrated using a `client:*` directive. This is a component attribute to define how your component should be rendered and hydrated. It describes whether your component should be rendered at build-time, and when your component's JavaScript should be loaded by the browser, client-side.
+
+Most directives will **render** the component on the server at build time, and **hydrate** the component on the client at run time according to the specific directive.
 
 ```astro
 ---
-// Example: hydrating a React component in the browser.
+// Example: hydrating framework components in the browser.
 import MyReactComponent from '../components/MyReactComponent.jsx';
+import MySvelteComponent from '../components/MySvelteComponent.svelte';
 ---
-<!-- "client:visible" means the component won't load any client-side
-     JavaScript for the component until it becomes visible in the
-     user’s browser. -->
+<!-- This component's JS will begin importing when the page loads -->
+<MySvelteComponent client: load />
+
+<!-- This component's JS will not be sent to the client until 
+the user scrolls down and the component is visible on the page -->
 <MyReactComponent client:visible />
 ```
 
-Note that the renderer JS (e.g. React) and the component’s CSS are downloaded with the page. The `client:*` directives only dictate when the component JS is imported and when the component is hydrated.
+>⚠️ Any renderer JS necessary for the component's framework (e.g. React, Svelte) is downloaded with the page. The `client:*` directives only dictate when the component JS is imported and when the component is hydrated.
 
 ### `<MyComponent client:load />`
 
@@ -34,25 +39,38 @@ Start importing the component JS as soon as main thread is free (uses [requestId
 
 ### `<MyComponent client:visible />`
 
-Start importing the component JS as soon as the element enters the viewport (uses [IntersectionObserver][mdn-io]). Hydrate the component when import completes. Useful for content lower down on the page.
+Start importing the component JS as soon as the element enters the viewport (uses [IntersectionObserver][mdn-io]). Hydrate the component when import completes.
+
+💡 *Useful for content lower down on the page.*
 
 ### `<MyComponent client:media={QUERY} />`
 
-Start importing the component JS as soon as the browser matches the given media query (uses [matchMedia][mdn-mm]). Hydrate the component when import completes. Useful for sidebar toggles, or other elements that should only display on mobile or desktop devices.
+Start importing the component JS as soon as the browser matches the given media query (uses [matchMedia][mdn-mm]). Hydrate the component when import completes. 
 
-### `<MyComponent client:only />`
+💡 *Useful for sidebar toggles, or other elements that should only display on mobile or desktop devices.*
 
-Start importing the component JS at page load and hydrate when the import completes, similar to `client:load`. The component will be **skipped** at build time, useful for components that are entirely dependent on client-side APIs. This is best avoided unless absolutely needed, in most cases it is best to render placeholder content on the server and delay any browser API calls until the component hydrates in the browser.
+### `<MyComponent client:only=" " />`
 
-If more than one renderer is included in the Astro [config](/en/reference/configuration-reference), `client:only` needs a hint to know which renderer to use for the component. For example, `client:only="react"` would make sure that the component is hydrated in the browser with the React renderer. For custom renderers not provided by `@astrojs`, use the full name of the renderer provided in your Astro config, i.e. `<client:only="my-custom-renderer" />`.
+Start importing the component JS at page load and hydrate when the import completes, similar to `client:load`.
 
-## Can I Hydrate Astro Components?
+ >⚠️ The component will be **skipped** at build time, and should specify which renderer to use from the array in your [`astro.config.mjs` configuration](/en/reference/configuration-reference))
+ >
+ > e.g. `<client:only="react" />` or `<client:only="my-custom-renderer" />`
+ 
+ 💡 *Useful for components that are entirely dependent on client-side APIs.* 
 
-[Astro components](/en/core-concepts/astro-components) (`.astro` files) are HTML-only templating components with no client-side runtime. If you try to hydrate an Astro component with a `client:` modifier, you will get an error.
 
-To make your Astro component interactive, you will need to convert it to the frontend framework of your choice: React, Svelte, Vue, etc. If you have no preference, we recommend React or Preact as they are most similar to Astro’s syntax. Using a frontend framework provides a client-side runtime that encapsulates the JavaScript and allows usage of `client:` modifiers per component instance.
+## Interactivity in Astro Components
 
-Alternatively, you could add a `<script>` tag to your Astro component HTML template and send JavaScript to the browser that way, but this script will execute in the global scope and there will be no client-side component to attach a `client:` modifier to. While this is fine for the simple stuff, we recommend a frontend framework for more complex interactive components.
+[Astro components](/en/core-concepts/astro-components) (`.astro` files) are HTML-only templating components with no client-side runtime. 
+
+### Can I Hydrate Astro Components?
+
+No! If you try to hydrate an Astro component with a `client:` modifier, you will get an error.
+
+### `<script>`
+
+You can add a `<script>` tag to your Astro component HTML template and send JavaScript to the browser that executes in the global scope.
 
 ```astro
 ---
@@ -66,7 +84,9 @@ document.querySelector("button").addEventListener("click",() => {
 })
 </script>
 ```
+### XElement
 
+The community project [XElement](https://www.npmjs.com/package/astro-xelement) allows you to create dynamic HTML elements with interactivity (e.g. animations, transitions, event listeners) natively in an Astro components.
 
 ## TODO
 
